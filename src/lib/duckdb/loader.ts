@@ -19,6 +19,11 @@ function csvPath(filename: string): string {
   return toDuckDBPath(path.join(DATA_DIR, filename));
 }
 
+/** Resolve a glob-style path (e.g. 'HCAHPS-Hospital_part*.csv') for DuckDB */
+function csvGlob(pattern: string): string {
+  return toDuckDBPath(path.join(DATA_DIR, pattern));
+}
+
 // Standard NULL sentinel values from CMS data files
 // all_varchar=true prevents auto-type-detection failures on footnote columns
 // (e.g. "5, 24" in HCAHPS). Views use TRY_CAST for all numeric fields.
@@ -39,6 +44,27 @@ async function loadTable(
     )
   `);
   console.log(`[DuckDB] Loaded ${tableName} from ${filename}`);
+}
+
+/**
+ * Load a table from multiple CSV part files using a glob pattern.
+ * Each part file must have the same header row.
+ */
+async function loadTableFromParts(
+  conn: { run: (sql: string) => Promise<unknown> },
+  tableName: string,
+  globPattern: string
+): Promise<void> {
+  const gp = csvGlob(globPattern);
+  await conn.run(`
+    CREATE TABLE IF NOT EXISTS ${tableName} AS
+    SELECT * FROM read_csv(
+      '${gp}',
+      header = true,
+      ${NULL_STRINGS}
+    )
+  `);
+  console.log(`[DuckDB] Loaded ${tableName} from ${globPattern}`);
 }
 
 export async function initializeDuckDB(): Promise<void> {
@@ -62,7 +88,6 @@ export async function initializeDuckDB(): Promise<void> {
     // ── Core measure tables (tall/long format) ────────────────────────────
     const measureTables: Array<[string, string]> = [
       ['complications_deaths', 'Complications_and_Deaths-Hospital.csv'],
-      ['hcahps',               'HCAHPS-Hospital.csv'],
       ['hai',                  'Healthcare_Associated_Infections-Hospital.csv'],
       ['timely_care',          'Timely_and_Effective_Care-Hospital.csv'],
       ['unplanned_visits',     'Unplanned_Hospital_Visits-Hospital.csv'],
@@ -79,6 +104,13 @@ export async function initializeDuckDB(): Promise<void> {
     for (const [tableName, filename] of measureTables) {
       await loadTable(conn as unknown as { run: (sql: string) => Promise<unknown> }, tableName, filename);
     }
+
+    // HCAHPS is split across multiple part files (original exceeds 100 MB)
+    await loadTableFromParts(
+      conn as unknown as { run: (sql: string) => Promise<unknown> },
+      'hcahps',
+      'HCAHPS-Hospital_part*.csv',
+    );
 
     // ── HVBP (wide/pivot format) ──────────────────────────────────────────
     const hvbpTables: Array<[string, string]> = [

@@ -48,3 +48,6 @@ app/node_modules/
 
 # native node addons
 *.node
+
+# Original HCAHPS file too large for GitHub (>100MB) - split into _part*.csv
+CMS Data/HCAHPS-Hospital.csv
