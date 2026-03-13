@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { SideNav } from '@/components/layout/SideNav';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -14,12 +15,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <div className="flex h-screen overflow-hidden">
-          <SideNav />
-          <main className="flex-1 overflow-y-auto bg-[var(--background)]">
-            {children}
-          </main>
-        </div>
+        <TooltipProvider delay={200}>
+          <div className="flex h-screen overflow-hidden">
+            <SideNav />
+            <main className="flex-1 overflow-y-auto bg-[var(--background)]">
+              {children}
+            </main>
+          </div>
+        </TooltipProvider>
       </body>
     </html>
   );

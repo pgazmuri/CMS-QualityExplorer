@@ -19,8 +19,8 @@ export const agentTools = {
       zip:   z.string().optional().describe('ZIP code'),
     }),
     execute: async (input) => {
-      const results = await searchHospitals({ ...input, limit: 20 });
-      return results.map((h) => ({
+      const { hospitals } = await searchHospitals({ ...input, limit: 20 });
+      return hospitals.map((h) => ({
         facility_id:   h.facility_id,
         facility_name: h.facility_name,
         city:          h.city,

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Search
-    const hospitals = await searchHospitals({
+    const result = await searchHospitals({
       name:          searchParams.get('name') ?? undefined,
       state:         searchParams.get('state') ?? undefined,
       city:          searchParams.get('city') ?? undefined,
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       limit:         Number(searchParams.get('limit') ?? 50),
     });
 
-    return NextResponse.json(hospitals);
+    return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Search failed';
     console.error('[/api/hospitals]', message);

@@ -13,6 +13,7 @@ import {
   Bot,
   Home,
   Activity,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { href: '/dashboards/geographic',               label: 'Geographic Atlas',      icon: Map },
   { href: '/dashboards/value-based-programs',     label: 'Value-Based Programs',  icon: Award },
   { href: '/agent',                               label: 'AI Data Agent',         icon: Bot },
+  { href: '/about',                               label: 'About',                 icon: BookOpen },
 ];
 
 export function SideNav() {

@@ -10,6 +10,7 @@ import { getHVBPTPSForHospital, getHRRPForHospital } from '@/lib/duckdb/queries/
 import { getHCAHPSStarsForHospital } from '@/lib/duckdb/queries/experience';
 import { StarRatingBadge } from '@/components/dashboards/StarRatingBadge';
 import { BenchmarkBadge } from '@/components/dashboards/BenchmarkBadge';
+import { InfoTooltip } from '@/components/dashboards/InfoTooltip';
 import { formatScore, formatSIR, formatMSPBRatio } from '@/lib/utils/format';
 
 export async function generateMetadata({
@@ -95,7 +96,7 @@ export default async function HospitalProfilePage({
       {/* Domain cards row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {/* Mortality */}
-        <DomainCard title="Mortality" href="/dashboards/clinical-outcomes">
+        <DomainCard title="Mortality" href="/dashboards/clinical-outcomes" tooltipId="mortality">
           {mortality.length === 0 ? (
             <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>No data available</p>
           ) : (
@@ -114,7 +115,7 @@ export default async function HospitalProfilePage({
         </DomainCard>
 
         {/* HAI Safety */}
-        <DomainCard title="Healthcare-Associated Infections" href="/dashboards/safety">
+        <DomainCard title="Healthcare-Associated Infections" href="/dashboards/safety" tooltipId="sir">
           {haiSIRs.length === 0 ? (
             <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>No data available</p>
           ) : (
@@ -133,7 +134,7 @@ export default async function HospitalProfilePage({
         </DomainCard>
 
         {/* Patient Experience */}
-        <DomainCard title="Patient Experience (HCAHPS)" href="/dashboards/patient-experience">
+        <DomainCard title="Patient Experience (HCAHPS)" href="/dashboards/patient-experience" tooltipId="hcahps">
           {overallHcahps?.star_rating != null ? (
             <div>
               <StarRatingBadge rating={overallHcahps.star_rating} />
@@ -148,7 +149,7 @@ export default async function HospitalProfilePage({
         </DomainCard>
 
         {/* Spending */}
-        <DomainCard title="Medicare Spending (MSPB)" href="/dashboards/spending-efficiency">
+        <DomainCard title="Medicare Spending (MSPB)" href="/dashboards/spending-efficiency" tooltipId="mspb">
           {mspb ? (
             <div>
               <p className="text-lg font-bold font-mono">{formatScore(mspb.mspb_ratio, 3)}</p>
@@ -166,7 +167,7 @@ export default async function HospitalProfilePage({
         </DomainCard>
 
         {/* HVBP */}
-        <DomainCard title="Value-Based Purchasing" href="/dashboards/value-based-programs">
+        <DomainCard title="Value-Based Purchasing" href="/dashboards/value-based-programs" tooltipId="hvbp">
           {hvbp ? (
             <div className="space-y-1">
               <p className="text-lg font-bold">{hvbp.tps != null ? hvbp.tps.toFixed(0) : 'N/A'}</p>
@@ -191,7 +192,7 @@ export default async function HospitalProfilePage({
         </DomainCard>
 
         {/* HAC */}
-        <DomainCard title="HAC Reduction Program" href="/dashboards/value-based-programs">
+        <DomainCard title="HAC Reduction Program" href="/dashboards/value-based-programs" tooltipId="hac">
           {hac ? (
             <div>
               <div className="flex items-center gap-2">
@@ -257,8 +258,8 @@ function QuickStat({ label, value, mono = false }: { label: string; value: strin
 }
 
 function DomainCard({
-  title, href, children,
-}: { title: string; href: string; children: React.ReactNode }) {
+  title, href, tooltipId, children,
+}: { title: string; href: string; tooltipId?: string; children: React.ReactNode }) {
   return (
     <Link
       href={href}
@@ -267,6 +268,7 @@ function DomainCard({
     >
       <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--muted-foreground)' }}>
         {title}
+        {tooltipId && <InfoTooltip measureId={tooltipId} size={12} />}
       </h3>
       {children}
     </Link>

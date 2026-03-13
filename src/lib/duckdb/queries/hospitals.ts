@@ -32,6 +32,14 @@ function escapeSql(s: string): string {
   return s.replace(/'/g, "''");
 }
 
+const VALID_SORT_COLUMNS = ['facility_name', 'state', 'star_rating', 'city'] as const;
+type SortColumn = typeof VALID_SORT_COLUMNS[number];
+
+export interface SearchHospitalsResult {
+  hospitals: HospitalSearchResult[];
+  totalCount: number;
+}
+
 export async function searchHospitals(params: {
   name?: string;
   state?: string;
@@ -39,7 +47,10 @@ export async function searchHospitals(params: {
   zip?: string;
   hospital_type?: string;
   limit?: number;
-}): Promise<HospitalSearchResult[]> {
+  offset?: number;
+  orderBy?: string;
+  orderDir?: 'asc' | 'desc';
+}): Promise<SearchHospitalsResult> {
   const conditions: string[] = [];
 
   if (params.name) {
@@ -59,16 +70,32 @@ export async function searchHospitals(params: {
   }
 
   const WHERE = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  const LIMIT = Math.min(params.limit ?? 50, 200);
+  const LIMIT = Math.min(params.limit ?? 24, 200);
+  const OFFSET = Math.max(params.offset ?? 0, 0);
 
-  return query<HospitalSearchResult>(`
-    SELECT facility_id, facility_name, city, state, zip,
-           hospital_type, star_rating, emergency_services
-    FROM v_hospital_profile
-    ${WHERE}
-    ORDER BY facility_name
-    LIMIT ${LIMIT}
-  `);
+  // Validate sort column to prevent SQL injection
+  const sortCol: SortColumn = VALID_SORT_COLUMNS.includes(params.orderBy as SortColumn)
+    ? (params.orderBy as SortColumn)
+    : 'facility_name';
+  const sortDir = params.orderDir === 'desc' ? 'DESC' : 'ASC';
+  // Put NULLs last when sorting
+  const ORDER = `ORDER BY ${sortCol} ${sortDir} NULLS LAST`;
+
+  const [hospitals, countResult] = await Promise.all([
+    query<HospitalSearchResult>(`
+      SELECT facility_id, facility_name, city, state, zip,
+             hospital_type, star_rating, emergency_services
+      FROM v_hospital_profile
+      ${WHERE}
+      ${ORDER}
+      LIMIT ${LIMIT} OFFSET ${OFFSET}
+    `),
+    query<{ cnt: number }>(`
+      SELECT COUNT(*) AS cnt FROM v_hospital_profile ${WHERE}
+    `),
+  ]);
+
+  return { hospitals, totalCount: countResult[0]?.cnt ?? 0 };
 }
 
 export async function getHospitalById(facilityId: string): Promise<HospitalProfile | null> {
