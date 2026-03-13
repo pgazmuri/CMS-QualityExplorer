@@ -42,3 +42,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 app/node_modules/
+
+# secrets
+.key
+
+# native node addons
+*.node
