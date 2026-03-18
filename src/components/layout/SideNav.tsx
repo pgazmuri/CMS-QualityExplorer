@@ -36,14 +36,14 @@ export function SideNav() {
   return (
     <aside
       className="flex flex-col w-[240px] min-w-[240px] h-full border-r overflow-y-auto"
-      style={{ borderColor: 'var(--border)', background: 'var(--card)' }}
+      style={{ borderColor: 'var(--sidebar-border)', background: 'var(--sidebar-bg)', color: 'var(--sidebar-fg)' }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-5 border-b" style={{ borderColor: 'var(--border)' }}>
-        <Activity className="h-5 w-5 text-blue-500" />
+      <div className="flex items-center gap-2 px-4 py-5 border-b" style={{ borderColor: 'var(--sidebar-border)' }}>
+        <Activity className="h-5 w-5 text-blue-400" />
         <div>
-          <p className="text-sm font-semibold leading-none">CMS Quality</p>
-          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Explorer</p>
+          <p className="text-sm font-semibold leading-none" style={{ color: 'var(--sidebar-fg)' }}>CMS Quality</p>
+          <p className="text-xs" style={{ color: 'var(--sidebar-muted)' }}>Explorer</p>
         </div>
       </div>
 
@@ -58,8 +58,8 @@ export function SideNav() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
-                  : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                  ? 'bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-fg)]'
+                  : 'text-[var(--sidebar-muted)] hover:bg-[var(--sidebar-active-bg)] hover:text-[var(--sidebar-fg)]'
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -70,9 +70,11 @@ export function SideNav() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t text-xs" style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}>
+      <div className="px-4 py-3 border-t text-xs" style={{ borderColor: 'var(--sidebar-border)', color: 'var(--sidebar-muted)' }}>
         <p>Data: CMS July 2025</p>
         <p>~5,381 hospitals</p>
+        <p className="mt-2">&copy; 2026 Pablo Gazmuri</p>
+        <p>Data sourced from <a href="https://data.cms.gov" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--sidebar-fg)]">CMS.gov</a></p>
       </div>
     </aside>
   );

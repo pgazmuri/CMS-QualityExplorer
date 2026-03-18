@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown';
 import type { WidgetSpec } from '@/lib/agent/types';
 
 interface TextWidgetProps {
@@ -6,8 +7,8 @@ interface TextWidgetProps {
 
 export function TextWidget({ spec }: TextWidgetProps) {
   return (
-    <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-      {spec.content ?? ''}
+    <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+      <ReactMarkdown>{spec.content ?? ''}</ReactMarkdown>
     </div>
   );
 }

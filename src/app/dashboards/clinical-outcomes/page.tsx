@@ -21,11 +21,12 @@ export default async function ClinicalOutcomesPage() {
       GROUP BY m.measure_id, n."National Rate"
       ORDER BY m.measure_id
     `),
-    query<{ measure_id: string; avg_score: number | null; min_score: number | null; max_score: number | null }>(`
+    query<{ measure_id: string; avg_score: number | null; min_score: number | null; max_score: number | null; hospital_count: number }>(`
       SELECT measure_id,
              ROUND(AVG(score), 2) AS avg_score,
              ROUND(MIN(score), 2) AS min_score,
-             ROUND(MAX(score), 2) AS max_score
+             ROUND(MAX(score), 2) AS max_score,
+             COUNT(*) AS hospital_count
       FROM v_mortality
       WHERE score IS NOT NULL
         AND measure_id IN ('MORT_30_AMI','MORT_30_HF','MORT_30_PN','MORT_30_COPD','MORT_30_CABG','COMP_HIP_KNEE')
@@ -33,6 +34,11 @@ export default async function ClinicalOutcomesPage() {
       ORDER BY measure_id
     `),
   ]);
+
+  const totalHospitals = distribution.reduce((s, r) => s + r.hospital_count, 0);
+  const totalBetter = benchmarks.reduce((s, r) => s + Number(r.better), 0);
+  const totalWorse = benchmarks.reduce((s, r) => s + Number(r.worse), 0);
+  const totalSame = benchmarks.reduce((s, r) => s + Number(r.same), 0);
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -42,11 +48,19 @@ export default async function ClinicalOutcomesPage() {
           <InfoTooltip measureId="mort_30_ami" />
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--muted-foreground)' }}>
-          30-day mortality rates and complication rates compared to national benchmarks.{' '}
+          30-day mortality rates and complication rates compared to national benchmarks.
+          Click any measure to explore geographic and financial dimensions.{' '}
           <a href="/about#clinical-outcomes" className="text-blue-600 hover:underline">Learn more</a>
         </p>
       </div>
-      <ClinicalOutcomesClient benchmarks={benchmarks} distribution={distribution} />
+      <ClinicalOutcomesClient
+        benchmarks={benchmarks}
+        distribution={distribution}
+        totalHospitals={totalHospitals}
+        totalBetter={totalBetter}
+        totalSame={totalSame}
+        totalWorse={totalWorse}
+      />
     </div>
   );
 }

@@ -52,7 +52,11 @@ export function LineChartWrapper({
             <Label value={yLabel} angle={-90} position="insideLeft" offset={8} fontSize={12} />
           )}
         </YAxis>
-        <Tooltip />
+        <Tooltip
+          contentStyle={{ backgroundColor: 'var(--card)', color: 'var(--foreground)', border: '1px solid var(--border)', borderRadius: 8 }}
+          labelStyle={{ color: 'var(--foreground)', fontWeight: 600 }}
+          itemStyle={{ color: 'var(--foreground)' }}
+        />
         {yKeys.length > 1 && <Legend />}
         {referenceLine != null && (
           <ReferenceLine

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { InfoTooltip } from '@/components/dashboards/InfoTooltip';
 import { DataTable, type DataTableColumn } from '@/components/dashboards/DataTable';
 import { FilterBar } from '@/components/dashboards/filters/FilterBar';
@@ -53,7 +54,11 @@ export function VBPClient({ hvbpTop, hacSummary, hrrpByMeasure, states, hacPenal
       key: 'facility_name',
       header: 'Hospital',
       sortable: true,
-      render: (v) => <span className="font-medium max-w-[200px] truncate block">{v as string}</span>,
+      render: (v, row) => (
+        <Link href={`/dashboards/hospital-compass/${row.facility_id}`} className="font-medium max-w-[200px] truncate block text-blue-600 hover:underline">
+          {v as string}
+        </Link>
+      ),
     },
     { key: 'state', header: 'State', sortable: true, align: 'right' as const },
     {

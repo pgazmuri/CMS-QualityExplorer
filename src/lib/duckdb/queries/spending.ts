@@ -1,8 +1,4 @@
-import { query } from '../instance';
-
-function escapeSql(s: string): string {
-  return s.replace(/'/g, "''");
-}
+import { query, queryParameterized } from '../instance';
 
 export interface MSPBRow {
   facility_id: string;
@@ -13,21 +9,27 @@ export interface MSPBRow {
 }
 
 export async function getMSPBForHospital(facilityId: string): Promise<MSPBRow | null> {
-  const rows = await query<MSPBRow>(`
+  const rows = await queryParameterized<MSPBRow>(`
     SELECT *
     FROM v_mspb
-    WHERE facility_id = '${escapeSql(facilityId)}'
+    WHERE facility_id = $facility_id
     LIMIT 1
-  `);
+  `, { facility_id: facilityId });
   return rows[0] ?? null;
 }
 
 export async function getMSPBByState(state?: string): Promise<MSPBRow[]> {
-  const WHERE = state ? `WHERE state = '${escapeSql(state)}'` : '';
+  if (state) {
+    return queryParameterized<MSPBRow>(`
+      SELECT facility_id, facility_name, state, mspb_ratio, footnote
+      FROM v_mspb
+      WHERE state = $state
+      ORDER BY mspb_ratio NULLS LAST
+    `, { state });
+  }
   return query<MSPBRow>(`
     SELECT facility_id, facility_name, state, mspb_ratio, footnote
     FROM v_mspb
-    ${WHERE}
     ORDER BY mspb_ratio NULLS LAST
   `);
 }
@@ -40,7 +42,7 @@ export async function getSpendingByClaimForHospital(facilityId: string): Promise
   pct_spending_hospital: string | null;
   pct_spending_national: string | null;
 }>> {
-  return query(`
+  return queryParameterized(`
     SELECT
       "Period"                     AS period,
       "Claim Type"                 AS claim_type,
@@ -49,9 +51,9 @@ export async function getSpendingByClaimForHospital(facilityId: string): Promise
       "Percent of Spndg Hospital"  AS pct_spending_hospital,
       "Percent of Spndg National"  AS pct_spending_national
     FROM spending_by_claim
-    WHERE "Facility ID" = '${escapeSql(facilityId)}'
+    WHERE "Facility ID" = $facility_id
     ORDER BY "Period", "Claim Type"
-  `);
+  `, { facility_id: facilityId });
 }
 
 export async function getMSPBDistribution(): Promise<Array<{

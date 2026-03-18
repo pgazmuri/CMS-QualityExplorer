@@ -31,7 +31,12 @@ export function ScatterPlotWrapper({
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
         <XAxis dataKey={xKey} name={xKey} tick={{ fontSize: 12 }} />
         <YAxis dataKey={yKey} name={yKey} tick={{ fontSize: 12 }} />
-        <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+        <Tooltip
+          cursor={{ strokeDasharray: '3 3' }}
+          contentStyle={{ backgroundColor: 'var(--card)', color: 'var(--foreground)', border: '1px solid var(--border)', borderRadius: 8 }}
+          labelStyle={{ color: 'var(--foreground)', fontWeight: 600 }}
+          itemStyle={{ color: 'var(--foreground)' }}
+        />
         <Scatter
           data={data}
           fill={CHART_COLORS[0]}

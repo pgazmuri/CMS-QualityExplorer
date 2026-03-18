@@ -1,4 +1,4 @@
-export type WidgetType = 'metric' | 'chart' | 'table' | 'text';
+export type WidgetType = 'metric' | 'chart' | 'table' | 'text' | 'map';
 export type ChartType = 'bar' | 'line' | 'scatter' | 'pie' | 'radar';
 
 export interface ColumnConfig {
@@ -19,13 +19,23 @@ export interface ChartConfig {
   referenceLines?: Array<{ value: number; label: string; color: string }>;
 }
 
+export interface MapConfig {
+  latKey: string;
+  lonKey: string;
+  labelKey: string;
+  colorKey?: string;
+  sizeKey?: string;
+}
+
 export interface WidgetSpec {
   id: string;
   type: WidgetType;
   title: string;
+  turnId?: string;
   sql?: string;
   chartType?: ChartType;
   chartConfig?: ChartConfig;
+  mapConfig?: MapConfig;
   columns?: ColumnConfig[];
   content?: string;
   metricKey?: string;
@@ -37,6 +47,7 @@ export interface WidgetSpec {
 
 export interface WidgetData {
   rows: Record<string, unknown>[];
+  schema?: { name: string; type: string }[];
   isLoading: boolean;
   error: string | null;
 }

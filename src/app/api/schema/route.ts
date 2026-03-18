@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/duckdb/instance';
+import { query, queryParameterized } from '@/lib/duckdb/instance';
 
 export const runtime = 'nodejs';
 
@@ -8,25 +8,23 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl;
     const tableName = searchParams.get('table');
 
-    const sql = tableName
-      ? `SELECT column_name, data_type
-         FROM information_schema.columns
-         WHERE table_name = '${tableName.replace(/'/g, "''")}'
-           AND table_schema = 'main'
-         ORDER BY ordinal_position`
-      : `SELECT table_name, COUNT(*) AS column_count
-         FROM information_schema.columns
-         WHERE table_schema = 'main'
-         GROUP BY table_name
-         ORDER BY table_name`;
-
-    const rows = await query(sql);
-
     if (tableName) {
+      // Validate table name: only allow alphanumeric + underscore to prevent injection
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+        return NextResponse.json({ error: 'Invalid table name' }, { status: 400 });
+      }
+      const rows = await queryParameterized(
+        `SELECT column_name, data_type
+         FROM information_schema.columns
+         WHERE table_name = $table_name
+           AND table_schema = 'main'
+         ORDER BY ordinal_position`,
+        { table_name: tableName },
+      );
       return NextResponse.json(rows);
     }
 
-    // Group by table for full schema
+    // Full schema dump (no user input in query)
     const schema: Record<string, { column: string; type: string }[]> = {};
     const detailedRows = await query<{ table_name: string; column_name: string; data_type: string }>(`
       SELECT table_name, column_name, data_type

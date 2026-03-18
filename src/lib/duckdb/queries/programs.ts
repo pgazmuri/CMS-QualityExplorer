@@ -1,8 +1,4 @@
-import { query } from '../instance';
-
-function escapeSql(s: string): string {
-  return s.replace(/'/g, "''");
-}
+import { query, queryParameterized } from '../instance';
 
 export interface HVBPTPSRow {
   facility_id: string;
@@ -28,13 +24,13 @@ export interface HRRPRow {
 }
 
 export async function getHVBPTPSForHospital(facilityId: string): Promise<HVBPTPSRow | null> {
-  const rows = await query<HVBPTPSRow>(`
+  const rows = await queryParameterized<HVBPTPSRow>(`
     SELECT *
     FROM v_hvbp_tps
-    WHERE facility_id = '${escapeSql(facilityId)}'
+    WHERE facility_id = $facility_id
     ORDER BY fiscal_year DESC
     LIMIT 1
-  `);
+  `, { facility_id: facilityId });
   return rows[0] ?? null;
 }
 
@@ -42,23 +38,30 @@ export async function getHVBPLeaderboard(params: {
   state?: string;
   limit?: number;
 }): Promise<HVBPTPSRow[]> {
-  const WHERE = params.state ? `WHERE state = '${escapeSql(params.state)}'` : '';
+  if (params.state) {
+    return queryParameterized<HVBPTPSRow>(`
+      SELECT *
+      FROM v_hvbp_tps
+      WHERE state = $state
+      ORDER BY tps DESC NULLS LAST
+      LIMIT ${params.limit ?? 100}
+    `, { state: params.state });
+  }
   return query<HVBPTPSRow>(`
     SELECT *
     FROM v_hvbp_tps
-    ${WHERE}
     ORDER BY tps DESC NULLS LAST
     LIMIT ${params.limit ?? 100}
   `);
 }
 
 export async function getHRRPForHospital(facilityId: string): Promise<HRRPRow[]> {
-  return query<HRRPRow>(`
+  return queryParameterized<HRRPRow>(`
     SELECT *
     FROM v_hrrp
-    WHERE facility_id = '${escapeSql(facilityId)}'
+    WHERE facility_id = $facility_id
     ORDER BY measure_name
-  `);
+  `, { facility_id: facilityId });
 }
 
 export async function getStateSummary(): Promise<Array<{

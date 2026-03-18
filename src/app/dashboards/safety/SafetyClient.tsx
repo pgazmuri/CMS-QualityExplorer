@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { InfoTooltip } from '@/components/dashboards/InfoTooltip';
 import { DataTable, type DataTableColumn } from '@/components/dashboards/DataTable';
 import { FilterBar } from '@/components/dashboards/filters/FilterBar';
@@ -89,7 +90,13 @@ export function SafetyClient({
 
   // HAC table columns
   const hacColumns: DataTableColumn<HACHospitalRow>[] = [
-    { key: 'facility_name', header: 'Hospital', sortable: true },
+    { key: 'facility_name', header: 'Hospital', sortable: true,
+      render: (v, row) => (
+        <Link href={`/dashboards/hospital-compass/${row.facility_id}`} className="font-medium text-blue-600 hover:underline">
+          {v as string}
+        </Link>
+      ),
+    },
     { key: 'state', header: 'State', sortable: true, align: 'center' },
     {
       key: 'hac_score',

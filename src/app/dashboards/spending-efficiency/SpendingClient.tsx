@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { InfoTooltip } from '@/components/dashboards/InfoTooltip';
 import { DataTable, type DataTableColumn } from '@/components/dashboards/DataTable';
 import { FilterBar } from '@/components/dashboards/filters/FilterBar';
@@ -144,7 +145,9 @@ function HospitalMSPBTable({ title, hospitals }: {
       sortable: true,
       render: (v, row) => (
         <div>
-          <p className="font-medium truncate max-w-[180px]">{v as string}</p>
+          <Link href={`/dashboards/hospital-compass/${row.facility_id}`} className="font-medium truncate max-w-[180px] block text-blue-600 hover:underline">
+            {v as string}
+          </Link>
           <p style={{ color: 'var(--muted-foreground)' }}>{row.state}</p>
         </div>
       ),

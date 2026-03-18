@@ -82,6 +82,8 @@ export async function initializeDuckDB(): Promise<void> {
   await withConnection(async (conn) => {
     // ── Reference tables ──────────────────────────────────────────────────
     await loadTable(conn as unknown as { run: (sql: string) => Promise<unknown> }, 'hospitals', 'Hospital_General_Information.csv');
+    await loadTable(conn as unknown as { run: (sql: string) => Promise<unknown> }, 'geocoded_hospitals', 'Birthing_Friendly_Hospitals_Geocoded.csv');
+    await loadTable(conn as unknown as { run: (sql: string) => Promise<unknown> }, 'zip_geocode', 'zip_centroids.csv');
     await loadTable(conn as unknown as { run: (sql: string) => Promise<unknown> }, 'footnote_crosswalk', 'Footnote_Crosswalk.csv');
     await loadTable(conn as unknown as { run: (sql: string) => Promise<unknown> }, 'measure_dates', 'Measure_Dates.csv');
 

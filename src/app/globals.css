@@ -1,13 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f1f5f9;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
-  --muted: #f1f5f9;
+  --sidebar-bg: #1e293b;
+  --sidebar-fg: #f8fafc;
+  --sidebar-muted: #94a3b8;
+  --sidebar-border: #334155;
+  --sidebar-active-bg: #334155;
+  --sidebar-active-fg: #ffffff;
+  --muted: #e2e8f0;
   --muted-foreground: #64748b;
-  --border: #e2e8f0;
+  --border: #cbd5e1;
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
   --ring: #3b82f6;
@@ -40,6 +46,12 @@
     --muted-foreground: #94a3b8;
     --border: #334155;
     --primary: #60a5fa;
+    --sidebar-bg: #0f172a;
+    --sidebar-fg: #f8fafc;
+    --sidebar-muted: #94a3b8;
+    --sidebar-border: #1e293b;
+    --sidebar-active-bg: #1e293b;
+    --sidebar-active-fg: #ffffff;
   }
 }
 
@@ -52,6 +64,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   margin: 0;
+}
+
+/* Native select & option elements – prevent white-on-white in dark mode */
+select {
+  color: var(--foreground);
+  background-color: var(--card);
+}
+
+select option {
+  color: var(--foreground);
+  background-color: var(--card);
 }
 
 /* Smooth scrollbar */

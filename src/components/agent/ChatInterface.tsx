@@ -10,6 +10,7 @@ import { useAgentStore } from '@/lib/store/agent-store';
 import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
+import { fetchArrowQuery } from '@/lib/arrow-client';
 import type { WidgetSpec } from '@/lib/agent/types';
 
 interface ToolCall {
@@ -20,11 +21,15 @@ interface ToolCall {
   output?: unknown;
 }
 
+export interface TextSegment { type: 'text'; text: string }
+export interface ToolSegment { type: 'tool'; toolCall: ToolCall }
+export type MessageSegment = TextSegment | ToolSegment;
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
-  content: string;
-  toolCalls: ToolCall[];
+  content: string;          // flat text for conversation history
+  segments: MessageSegment[];
 }
 
 type ChatStatus = 'ready' | 'submitted' | 'streaming' | 'error';
@@ -36,13 +41,15 @@ function mapToolState(state: ToolCall['state']): 'partial-call' | 'call' | 'resu
 }
 
 export function ChatInterface() {
-  const { addWidget, setWidgetData } = useAgentStore();
+  const { addWidget, setWidgetData, startTurn } = useAgentStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ChatStatus>('ready');
   const [error, setError] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeBubbleRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const scrollModeRef = useRef<'bottom' | 'pin-top' | 'none'>('bottom');
 
   // Use refs to avoid stale closures in the stream handler
   const addWidgetRef = useRef(addWidget);
@@ -50,21 +57,12 @@ export function ChatInterface() {
   const setWidgetDataRef = useRef(setWidgetData);
   setWidgetDataRef.current = setWidgetData;
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   const fetchWidgetData = useCallback(async (widgetId: string, sql: string) => {
     try {
-      const res = await fetch('/api/query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sql }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Query failed');
+      const { rows, schema } = await fetchArrowQuery(sql);
       setWidgetDataRef.current(widgetId, {
-        rows: Array.isArray(json) ? json : (json.rows ?? []),
+        rows,
+        schema,
         isLoading: false,
         error: null,
       });
@@ -100,7 +98,7 @@ export function ChatInterface() {
       id: crypto.randomUUID(),
       role: 'user',
       content: text,
-      toolCalls: [],
+      segments: [{ type: 'text', text }],
     };
 
     const conversationMessages = [...messages, userMsg];
@@ -108,18 +106,46 @@ export function ChatInterface() {
     setStatus('submitted');
     setError(null);
 
+    // Start a new turn for widget grouping
+    startTurn();
+
     const controller = new AbortController();
     abortRef.current = controller;
 
     const assistantId = crypto.randomUUID();
     let assistantContent = '';
-    const toolCalls: ToolCall[] = [];
+    const segments: MessageSegment[] = [];
 
-    // Add placeholder assistant message
+    // Helper: get or create the last text segment
+    const ensureTextSegment = (): TextSegment => {
+      const last = segments[segments.length - 1];
+      if (last && last.type === 'text') return last;
+      const seg: TextSegment = { type: 'text', text: '' };
+      segments.push(seg);
+      return seg;
+    };
+
+    // Add placeholder assistant message and pin its top in view
+    scrollModeRef.current = 'pin-top';
     setMessages((prev) => [
       ...prev,
-      { id: assistantId, role: 'assistant', content: '', toolCalls: [] },
+      { id: assistantId, role: 'assistant', content: '', segments: [] },
     ]);
+    // After React renders the placeholder, scroll its top into view once
+    requestAnimationFrame(() => {
+      activeBubbleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrollModeRef.current = 'none';
+    });
+
+    const updateAssistantMessage = () => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: assistantContent, segments: [...segments.map(s => s.type === 'tool' ? { ...s, toolCall: { ...s.toolCall } } : { ...s })] }
+            : m,
+        ),
+      );
+    };
 
     try {
       const res = await fetch('/api/agent', {
@@ -171,69 +197,56 @@ export function ChatInterface() {
             const type = chunk.type as string;
 
             if (type === 'text-delta') {
-              assistantContent += (chunk.delta as string) ?? '';
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, content: assistantContent } : m,
-                ),
-              );
+              const delta = (chunk.delta as string) ?? '';
+              assistantContent += delta;
+              const textSeg = ensureTextSegment();
+              textSeg.text += delta;
+              updateAssistantMessage();
             } else if (type === 'tool-input-start') {
-              toolCalls.push({
+              const tc: ToolCall = {
                 toolCallId: chunk.toolCallId as string,
                 toolName: chunk.toolName as string,
                 input: {},
                 state: 'input-streaming',
-              });
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, toolCalls: [...toolCalls] } : m,
-                ),
-              );
+              };
+              segments.push({ type: 'tool', toolCall: tc });
+              updateAssistantMessage();
             } else if (type === 'tool-input-available') {
-              const idx = toolCalls.findIndex(
-                (t) => t.toolCallId === (chunk.toolCallId as string),
+              const toolId = chunk.toolCallId as string;
+              const seg = segments.find(
+                (s): s is ToolSegment => s.type === 'tool' && s.toolCall.toolCallId === toolId,
               );
-              if (idx >= 0) {
-                toolCalls[idx] = {
-                  ...toolCalls[idx],
+              if (seg) {
+                seg.toolCall = {
+                  ...seg.toolCall,
                   input: (chunk.input as Record<string, unknown>) ?? {},
                   state: 'input-available',
                 };
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === assistantId ? { ...m, toolCalls: [...toolCalls] } : m,
-                  ),
-                );
+                updateAssistantMessage();
               }
             } else if (type === 'tool-output-available') {
-              const idx = toolCalls.findIndex(
-                (t) => t.toolCallId === (chunk.toolCallId as string),
+              const toolId = chunk.toolCallId as string;
+              const seg = segments.find(
+                (s): s is ToolSegment => s.type === 'tool' && s.toolCall.toolCallId === toolId,
               );
-              if (idx >= 0) {
-                toolCalls[idx] = {
-                  ...toolCalls[idx],
+              if (seg) {
+                seg.toolCall = {
+                  ...seg.toolCall,
                   output: chunk.output,
                   state: 'output-available',
                 };
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === assistantId ? { ...m, toolCalls: [...toolCalls] } : m,
-                  ),
-                );
+                updateAssistantMessage();
                 // Process widget tools
                 processToolOutput(chunk.output);
               }
             } else if (type === 'tool-output-error') {
-              const idx = toolCalls.findIndex(
-                (t) => t.toolCallId === (chunk.toolCallId as string),
+              const toolId = chunk.toolCallId as string;
+              const seg = segments.find(
+                (s): s is ToolSegment => s.type === 'tool' && s.toolCall.toolCallId === toolId,
               );
-              if (idx >= 0) {
-                toolCalls[idx] = { ...toolCalls[idx], state: 'output-error' };
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === assistantId ? { ...m, toolCalls: [...toolCalls] } : m,
-                  ),
-                );
+              if (seg) {
+                seg.toolCall = { ...seg.toolCall, state: 'output-error' };
+                updateAssistantMessage();
               }
             }
           }
@@ -241,6 +254,11 @@ export function ChatInterface() {
       }
 
       setStatus('ready');
+      // After streaming completes, scroll to show the end of the response
+      scrollModeRef.current = 'bottom';
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         setStatus('ready');
@@ -250,7 +268,7 @@ export function ChatInterface() {
         setStatus('error');
         // Remove placeholder if it has no content
         setMessages((prev) =>
-          prev.filter((m) => m.id !== assistantId || m.content || m.toolCalls.length > 0),
+          prev.filter((m) => m.id !== assistantId || m.content || m.segments.length > 0),
         );
       }
     }
@@ -261,6 +279,9 @@ export function ChatInterface() {
       e?.preventDefault();
       const text = input.trim();
       if (!text) return;
+      // Scroll to bottom to show the new user message
+      scrollModeRef.current = 'bottom';
+      requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }));
       sendMessage(text);
       setInput('');
     },
@@ -288,18 +309,19 @@ export function ChatInterface() {
             Ask a question about hospital quality data.
           </div>
         )}
-        {messages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            role={message.role}
-            content={message.content}
-            toolInvocations={message.toolCalls.map((tc) => ({
-              toolName: tc.toolName,
-              args: tc.input,
-              state: mapToolState(tc.state),
-            }))}
-          />
-        ))}
+        {messages.map((message, idx) => {
+          const isLastAssistant = message.role === 'assistant' && idx === messages.length - 1;
+          return (
+            <div key={message.id} ref={isLastAssistant ? activeBubbleRef : undefined}>
+              <MessageBubble
+                role={message.role}
+                content={message.content}
+                segments={message.segments}
+                isActive={isLastAssistant && isLoading}
+              />
+            </div>
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 

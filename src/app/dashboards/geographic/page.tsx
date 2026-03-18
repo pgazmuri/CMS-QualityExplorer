@@ -15,6 +15,8 @@ export default async function GeographicPage() {
     hac_penalized_count: number;
     star_rank: number;
     mspb_rank: number;
+    centroid_lat: number | null;
+    centroid_lon: number | null;
   }>(`
     SELECT
       state,
@@ -22,6 +24,8 @@ export default async function GeographicPage() {
       avg_star_rating,
       avg_mspb,
       hac_penalized_count,
+      centroid_lat,
+      centroid_lon,
       RANK() OVER (ORDER BY avg_star_rating DESC NULLS LAST) AS star_rank,
       RANK() OVER (ORDER BY avg_mspb ASC NULLS LAST)         AS mspb_rank
     FROM v_state_summary

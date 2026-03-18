@@ -4,12 +4,13 @@ import { Loader2, CheckCircle2 } from 'lucide-react';
 
 const TOOL_LABELS: Record<string, string> = {
   search_hospitals: 'Searching hospitals',
-  get_schema_info: 'Reading schema',
-  get_benchmarks: 'Fetching benchmarks',
+  search_hospitals_nearby: 'Finding nearby hospitals',
+  lookup_zip: 'Looking up location',
   create_chart_widget: 'Creating chart',
   create_table_widget: 'Creating table',
   create_metric_widget: 'Creating metric',
   create_text_widget: 'Creating text',
+  create_map_widget: 'Creating map',
 };
 
 interface ToolCallIndicatorProps {

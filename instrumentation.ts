@@ -10,7 +10,7 @@ export async function register() {
         const key = fs.readFileSync(keyFile, 'utf-8').trim();
         if (key) {
           process.env.OPENAI_API_KEY = key;
-          console.log('[Instrumentation] Loaded OpenAI API key from .key file');
+          console.log('[Instrumentation] API key configured from local file');
         }
       }
     } catch {
@@ -18,7 +18,11 @@ export async function register() {
     }
 
     // Initialize DuckDB with all CMS data
-    const { initializeDuckDB } = await import('./src/lib/duckdb/loader');
-    await initializeDuckDB();
+    try {
+      const { initializeDuckDB } = await import('./src/lib/duckdb/loader');
+      await initializeDuckDB();
+    } catch (err) {
+      console.error('[Instrumentation] DuckDB initialization failed:', err);
+    }
   }
 }

@@ -1,8 +1,4 @@
-import { query } from '../instance';
-
-function escapeSql(s: string): string {
-  return s.replace(/'/g, "''");
-}
+import { query, queryParameterized } from '../instance';
 
 export interface HCAHPSStarRow {
   facility_id: string;
@@ -17,12 +13,12 @@ export interface HCAHPSStarRow {
 }
 
 export async function getHCAHPSStarsForHospital(facilityId: string): Promise<HCAHPSStarRow[]> {
-  return query<HCAHPSStarRow>(`
+  return queryParameterized<HCAHPSStarRow>(`
     SELECT *
     FROM v_hcahps_stars
-    WHERE facility_id = '${escapeSql(facilityId)}'
+    WHERE facility_id = $facility_id
     ORDER BY measure_id
-  `);
+  `, { facility_id: facilityId });
 }
 
 export async function getHCAHPSStateAverage(state: string): Promise<Array<{
@@ -31,15 +27,15 @@ export async function getHCAHPSStateAverage(state: string): Promise<Array<{
   avg_star_rating: number | null;
   avg_linear_mean: number | null;
 }>> {
-  return query(`
+  return queryParameterized(`
     SELECT measure_id, question,
            ROUND(AVG(star_rating), 2) AS avg_star_rating,
            ROUND(AVG(linear_mean), 2) AS avg_linear_mean
     FROM v_hcahps_stars
-    WHERE state = '${escapeSql(state)}'
+    WHERE state = $state
     GROUP BY measure_id, question
     ORDER BY measure_id
-  `);
+  `, { state });
 }
 
 export async function getOverallHospitalStarDist(): Promise<Array<{

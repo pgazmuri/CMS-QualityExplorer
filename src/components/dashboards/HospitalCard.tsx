@@ -42,6 +42,11 @@ export function HospitalCard({ hospital, className }: HospitalCardProps) {
             <span>Emergency</span>
           </span>
         )}
+        {hospital.distance_miles != null && (
+          <span className="flex items-center gap-1 text-blue-500 font-medium">
+            {hospital.distance_miles} mi
+          </span>
+        )}
         <span className="ml-auto font-mono text-xs opacity-60">{hospital.facility_id}</span>
       </div>
     </Link>

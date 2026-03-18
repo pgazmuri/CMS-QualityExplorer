@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatByType } from '@/lib/utils/format';
 import { QueryViewer } from './QueryViewer';
 import type { WidgetSpec, WidgetData } from '@/lib/agent/types';
+import Link from 'next/link';
 
 interface TableWidgetProps {
   spec: WidgetSpec;
@@ -51,6 +52,22 @@ export function TableWidget({ spec, data }: TableWidgetProps) {
       ? spec.columns
       : Object.keys(data.rows[0]).map((key) => ({ key, header: key }));
 
+  // Auto-detect if rows have facility_id to enable hospital linking
+  const hasFacilityId = data.rows.length > 0 && 'facility_id' in data.rows[0];
+
+  const renderCell = (row: Record<string, unknown>, col: { key: string; format?: 'number' | 'percent' | 'currency' | 'date' | 'badge' | 'ratio' }) => {
+    const value = row[col.key];
+    const formatted = formatByType(value, col.format);
+    if (hasFacilityId && col.key === 'facility_name' && row.facility_id) {
+      return (
+        <Link href={`/dashboards/hospital-compass/${row.facility_id}`} className="text-blue-600 hover:underline">
+          {formatted}
+        </Link>
+      );
+    }
+    return formatted;
+  };
+
   return (
     <div>
       <Table>
@@ -66,7 +83,7 @@ export function TableWidget({ spec, data }: TableWidgetProps) {
             <TableRow key={rowIdx}>
               {columns.map((col) => (
                 <TableCell key={col.key}>
-                  {formatByType(row[col.key], (col as { format?: 'number' | 'percent' | 'currency' | 'date' | 'badge' | 'ratio' }).format)}
+                  {renderCell(row, col as { key: string; format?: 'number' | 'percent' | 'currency' | 'date' | 'badge' | 'ratio' })}
                 </TableCell>
               ))}
             </TableRow>

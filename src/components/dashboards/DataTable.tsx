@@ -113,7 +113,7 @@ export function DataTable<T extends AnyRow>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`pb-2 pt-1 font-medium text-xs ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.sortable ? 'cursor-pointer select-none hover:text-foreground' : ''} ${col.className ?? ''}`}
+                  className={`pb-2 pt-1 px-2 font-medium text-xs ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.sortable ? 'cursor-pointer select-none hover:text-foreground' : ''} ${col.className ?? ''}`}
                   style={{ color: 'var(--muted-foreground)' }}
                   onClick={col.sortable ? () => toggleSort(col.key) : undefined}
                   aria-sort={sort?.key === col.key ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
@@ -138,7 +138,7 @@ export function DataTable<T extends AnyRow>({
                 {columns.map((col) => (
                   <td
                     key={col.key}
-                    className={`py-1.5 text-xs ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.className ?? ''}`}
+                    className={`py-1.5 px-2 text-xs ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.className ?? ''}`}
                   >
                     {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '—')}
                   </td>

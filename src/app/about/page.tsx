@@ -502,6 +502,22 @@ export default function AboutPage() {
             Program results.
           </p>
         </Section>
+
+        {/* Author */}
+        <section className="scroll-mt-8 rounded-xl border p-6 mt-4" style={{ borderColor: 'var(--border)', background: 'var(--card)' }}>
+          <h2 className="text-lg font-bold mb-2">About the Author</h2>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--foreground)' }}>
+            This application was created by <strong>Pablo Gazmuri</strong>,
+            Chief Architect, Health and Life Sciences at Microsoft.
+            It is an independent project intended to make publicly available CMS
+            hospital quality data more accessible and interactive.
+          </p>
+          <p className="text-xs mt-3" style={{ color: 'var(--muted-foreground)' }}>
+            &copy; 2026 Pablo Gazmuri. All data is sourced from the Centers for
+            Medicare &amp; Medicaid Services (CMS) and is in the public domain.
+            This application and its visualizations are the original work of the author.
+          </p>
+        </section>
       </div>
     </div>
   );

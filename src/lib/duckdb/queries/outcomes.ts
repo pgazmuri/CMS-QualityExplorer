@@ -1,8 +1,4 @@
-import { query } from '../instance';
-
-function escapeSql(s: string): string {
-  return s.replace(/'/g, "''");
-}
+import { query, queryParameterized } from '../instance';
 
 export interface MortalityRow {
   facility_id: string;
@@ -19,23 +15,23 @@ export interface MortalityRow {
 }
 
 export async function getMortalityForHospital(facilityId: string): Promise<MortalityRow[]> {
-  return query<MortalityRow>(`
+  return queryParameterized<MortalityRow>(`
     SELECT *
     FROM v_mortality
-    WHERE facility_id = '${escapeSql(facilityId)}'
+    WHERE facility_id = $facility_id
     ORDER BY measure_id
-  `);
+  `, { facility_id: facilityId });
 }
 
 export async function getMortalityByState(state: string, measureId: string): Promise<MortalityRow[]> {
-  return query<MortalityRow>(`
+  return queryParameterized<MortalityRow>(`
     SELECT *
     FROM v_mortality
-    WHERE state = '${escapeSql(state)}'
-      AND measure_id = '${escapeSql(measureId)}'
+    WHERE state = $state
+      AND measure_id = $measure_id
       AND score IS NOT NULL
     ORDER BY score
-  `);
+  `, { state, measure_id: measureId });
 }
 
 export async function getMortalityNationalBenchmarks(): Promise<Array<{
@@ -56,12 +52,12 @@ export async function getBenchmarkDistribution(measureId: string): Promise<Array
   compared_to_national: string;
   cnt: number;
 }>> {
-  return query(`
+  return queryParameterized(`
     SELECT compared_to_national, COUNT(*) AS cnt
     FROM v_mortality
-    WHERE measure_id = '${escapeSql(measureId)}'
+    WHERE measure_id = $measure_id
       AND compared_to_national IS NOT NULL
     GROUP BY compared_to_national
     ORDER BY cnt DESC
-  `);
+  `, { measure_id: measureId });
 }
