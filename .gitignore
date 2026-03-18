@@ -46,6 +46,10 @@ app/node_modules/
 # secrets
 .key
 
+# deploy artifacts
+deploy.zip
+.deploy-staging/
+
 # native node addons
 *.node
 
