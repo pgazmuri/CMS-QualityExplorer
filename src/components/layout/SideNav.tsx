@@ -71,10 +71,9 @@ export function SideNav() {
 
       {/* Footer */}
       <div className="px-4 py-3 border-t text-xs" style={{ borderColor: 'var(--sidebar-border)', color: 'var(--sidebar-muted)' }}>
-        <p>Data: CMS July 2025</p>
+        <p>Data: <a href="https://data.cms.gov" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--sidebar-fg)]">CMS.gov</a> July 2025</p>
         <p>~5,381 hospitals</p>
         <p className="mt-2">&copy; 2026 Pablo Gazmuri</p>
-        <p>Data sourced from <a href="https://data.cms.gov" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--sidebar-fg)]">CMS.gov</a></p>
       </div>
     </aside>
   );
